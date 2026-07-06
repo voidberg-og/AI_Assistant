@@ -1,0 +1,36 @@
+This is the official documentation for My Personal AI Assistant 
+
+Global Variables:
+
+We are using two global variables: MEMORY_FILE and FACTS_FILE. 
+
+The MEMORY_FILE holds the name of the file that holds our conversation history, called conversation.json. 
+
+FACTS_FILE holds the name of the file that holds our long term memories. These long term memories trump conversation history and I have complete control over what is stored there. This file is called memory.json.
+
+Definitions/Functions:
+
+ask_ai(conversation, memory)
+extract_memory_decisions(user_input)
+save_memory()
+apply_memory_update(memroy, update)
+format_memory(memory)
+
+ask_ai(conversation, memory):
+
+	This function takes our conversation and our memories and puts them into a prompt to the LLM. It returns the response. We are currently using only one LM, llama3.1:8b. 
+
+	prompt = []: this is a list that will hold the final prompt we feed to the LM. 
+
+	memory_text = format_memory(memory): this is a text variable that holds our memories in the correct format for our prompt. 
+
+	prompt.append({}): this is appends a system message to our prompt. The system message states that memories are truth and conversatoin may be incorrect. It also instructs to not use conversation to override memory, and if there are conflicts to ignore the conversation. It also says to never modify exitsting facts unless explicitly told to. This is where we add the memory text, within the system message. We now have the facts loaded into the prompt. 
+
+	prompt.extend(conversation); this adds the conversation to the prompt after the memories. 
+
+	response = request.post(): this is where we are sending our prompt (memories and then conversation) to llama3.1 as a message with streaming off. 
+
+	returns the response as json 
+	
+extract_memory_decision(user_input): 
+	This function also makes a call to the LLM to decide if there is a FACT worth storing into the memories from the current user input, and it returns the decision made. 
