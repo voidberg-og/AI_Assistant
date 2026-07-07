@@ -34,3 +34,4 @@ ask_ai(conversation, memory):
 	
 extract_memory_decision(user_input): 
 	This function also makes a call to the LLM to decide if there is a FACT worth storing into the memories from the current user input, and it returns the decision made. 
+	UPDATE - I am not passing my current memories here, so it has no way to tell if it is A-relevant or B-and update vs an add. Either this function needs to only extract and propose memory, or it needs to include the update process as well. I think I need to pass memory into this function. 
