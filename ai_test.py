@@ -52,16 +52,24 @@ def ask_ai(conversation, memory):
     # add the conversation into the prompt after the memories 
     prompt.extend(conversation)
     
-    
-    response = requests.post(
-    "http://localhost:11434/api/chat",
-    json={
-        "model": "llama3.1:8b",
-        "messages": prompt,
-        "stream": False
-        }
-    )
-    return response.json()["message"]["content"]
+    try:
+        response = requests.post(
+        "http://localhost:11434/api/chat",
+        json={
+            "model": "llama3.1:8b",
+            "messages": prompt,
+            "stream": False
+            }
+        )
+        return response.json()["message"]["content"]
+    except requests.exceptions.ConnectionError:
+        return "Something went wrong. Make sure Ollama is running and retry."
+    except requests.exceptions.JSONDecodeError as json_err:
+        print(f"The server returned invalid JSON Formatting in ask_ai(): {json_err}")
+        return "Something went wrong. Please try again."
+    except requests.exceptions.RequestException as req_err:
+        print(f"a network, HTTP, or connection error occured in ask_ai(): {req_err}") 
+        return "Something went wrong. Please try again."
     
 #AI decides what it will save and print. Includes: instructions, user reply, and returns response 
 def extract_memory_decision(user_input):
@@ -69,14 +77,14 @@ def extract_memory_decision(user_input):
         {
             "role": "system",
             "content": """
-You are a memory extraction system.
+You are a memory extraction system within a personal ai assistant system. 
 
 Your job:
 Decide if the user message contains a FACT worth storing long-term.
 
 Rules:
 - Only store stable facts (pets, name, project, preferences)
-- If the fact already exists, use "update" instead of "add"
+- Some common topics expected to be long-term: pets, career, projects, work, finanicals, family, troubleshooting, health, philosophy. 
 - If nothing important, return {"action": "ignore"}
 
 Return ONLY valid JSON.
@@ -101,7 +109,8 @@ User said: {user_input}
         }
     ]
 
-    response = requests.post(
+    try:
+        response = requests.post(
         "http://localhost:11434/api/chat",
         json={
             "model": "llama3.1:8b",
@@ -110,9 +119,18 @@ User said: {user_input}
         }
     )
 
-    raw = response.json()["message"]["content"]
-
-    return json.loads(raw)
+            raw = response.json()["message"]["content"]
+    except requests.exceptions.JSONDecodeError as json_err:
+        print(f"The server returned invalid JSON Formatting in extract_memory_decision(): {json_err}")
+        return {"action": "ignore"}
+    except requests.exceptions.RequestException as req_err:
+        print(f"a network, HTTP, or connection error occured in extract_memory_decision(): {req_err}")
+        return {"action": "ignore"}
+        
+    try: 
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {"action": "ignore"}
     
 # save the conversation and memory files 
 def save_memory():
@@ -131,6 +149,8 @@ def apply_memory_update(memory, update):
 
     key = update["key"]
     value = update["value"]
+    if not key or value is None:
+        return memory
 
     # initialize category if needed
     if key not in memory:
@@ -141,13 +161,15 @@ def apply_memory_update(memory, update):
         memory[key] = [memory[key]]
 
     # check for duplicates (simple match)
-    exists = False
-    for item in memory[key]:
-        if isinstance(item, dict) and item.get("name") == value.get("name"):
-            exists = True
+    match_index = None
+    for i, item in enumerate(memory[key]):
+        if isinstance(item, dict) and isinstance(value, dict) and item.get("name") == value.get("name"):
+            match_index = i
             break
-
-    if not exists:
+            
+    if match_index is not None:
+        memory[key][match_index] = value 
+    else: 
         memory[key].append(value)
 
     return memory
