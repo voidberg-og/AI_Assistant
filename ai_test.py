@@ -4,8 +4,8 @@ import os
 
 # ---------Globals---------
 
-MEMORY_FILE = "conversation.json"
-FACTS_FILE = "memory.json"
+CONVERSATION_FILE = "conversation.json"
+MEMORY_FILE = "memory.json"
 
 """----------------------------------------
 ------------------Definitions--------------
@@ -52,24 +52,10 @@ def ask_ai(conversation, memory):
     # add the conversation into the prompt after the memories 
     prompt.extend(conversation)
     
-    try:
-        response = requests.post(
-        "http://localhost:11434/api/chat",
-        json={
-            "model": "llama3.1:8b",
-            "messages": prompt,
-            "stream": False
-            }
-        )
-        return response.json()["message"]["content"]
-    except requests.exceptions.ConnectionError:
+    reply = query_llm(prompt)
+    if reply is None:
         return "Something went wrong. Make sure Ollama is running and retry."
-    except requests.exceptions.JSONDecodeError as json_err:
-        print(f"The server returned invalid JSON Formatting in ask_ai(): {json_err}")
-        return "Something went wrong. Please try again."
-    except requests.exceptions.RequestException as req_err:
-        print(f"a network, HTTP, or connection error occured in ask_ai(): {req_err}") 
-        return "Something went wrong. Please try again."
+    return reply 
     
 #AI decides what it will save and print. Includes: instructions, user reply, and returns response 
 def extract_memory_decision(user_input):
@@ -109,35 +95,42 @@ User said: {user_input}
         }
     ]
 
-    try:
-        response = requests.post(
-        "http://localhost:11434/api/chat",
-        json={
-            "model": "llama3.1:8b",
-            "messages": prompt,
-            "stream": False
-        }
-    )
-
-            raw = response.json()["message"]["content"]
-    except requests.exceptions.JSONDecodeError as json_err:
-        print(f"The server returned invalid JSON Formatting in extract_memory_decision(): {json_err}")
-        return {"action": "ignore"}
-    except requests.exceptions.RequestException as req_err:
-        print(f"a network, HTTP, or connection error occured in extract_memory_decision(): {req_err}")
-        return {"action": "ignore"}
-        
+    raw = query_llm(prompt)
+    if raw is None:
+        return {"action":"ignore"}
     try: 
         return json.loads(raw)
     except json.JSONDecodeError:
         return {"action": "ignore"}
+
+   
+def query_llm(prompt)
+    
+    try:
+    response = requests.post(
+    "http://localhost:11434/api/chat",
+    json={
+        "model": "llama3.1:8b",
+        "messages": prompt,
+        "stream": False
+        }
+    )
+    return response.json()["message"]["content"]
+    except requests.exceptions.ConnectionError:
+        return None 
+    except requests.exceptions.JSONDecodeError as json_err:
+        print(f"The server returned invalid JSON Formatting: {json_err}")
+        return None
+    except requests.exceptions.RequestException as req_err:
+        print(f"a network, HTTP, or connection error occured: {req_err}") 
+        return None
     
 # save the conversation and memory files 
 def save_memory():
-    with open(MEMORY_FILE, "w") as f:
+    with open(CONVERSATION_FILE, "w") as f:
         json.dump(conversation, f, indent=2)
         
-    with open(FACTS_FILE, "w") as f:
+    with open(MEMORY_FILE, "w") as f:
         json.dump(memory, f, indent=2)
 
 """ This function takes the current memories and the current new suggestion update from
@@ -198,8 +191,8 @@ def format_memory(memory):
 """
 
 # create or open (read) the on-going conversation file 
-if os.path.exists(MEMORY_FILE):
-    with open(MEMORY_FILE, "r") as f:
+if os.path.exists(CONVERSATION_FILE):
+    with open(CONVERSATION_FILE, "r") as f:
         conversation = json.load(f)
 else:
     conversation = [
@@ -213,8 +206,8 @@ else:
     ]
     
 # create or open (read) the long-term memories 
-if os.path.exists(FACTS_FILE):
-    with open(FACTS_FILE, "r") as f:
+if os.path.exists(MEMORY_FILE):
+    with open(MEMORY_FILE, "r") as f:
         memory = json.load(f)
 else:
     memory = {}
