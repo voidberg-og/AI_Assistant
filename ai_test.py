@@ -104,17 +104,17 @@ User said: {user_input}
         return {"action": "ignore"}
 
    
-def query_llm(prompt)
+def query_llm(prompt):
     
     try:
-    response = requests.post(
-    "http://localhost:11434/api/chat",
-    json={
-        "model": "llama3.1:8b",
-        "messages": prompt,
-        "stream": False
-        }
-    )
+        response = requests.post(
+        "http://localhost:11434/api/chat",
+        json={
+            "model": "llama3.1:8b",
+            "messages": prompt,
+            "stream": False
+            }
+        )
     return response.json()["message"]["content"]
     except requests.exceptions.ConnectionError:
         return None 
