@@ -52,6 +52,7 @@ def ask_ai(conversation, memory):
     # add the conversation into the prompt after the memories 
     prompt.extend(conversation)
     
+    
     reply = query_llm(prompt)
     if reply is None:
         return "Something went wrong. Make sure Ollama is running and retry."
@@ -104,17 +105,17 @@ User said: {user_input}
         return {"action": "ignore"}
 
    
-def query_llm(prompt):
+def query_llm(prompt)
     
     try:
-        response = requests.post(
-        "http://localhost:11434/api/chat",
-        json={
-            "model": "llama3.1:8b",
-            "messages": prompt,
-            "stream": False
-            }
-        )
+    response = requests.post(
+    "http://localhost:11434/api/chat",
+    json={
+        "model": "llama3.1:8b",
+        "messages": prompt,
+        "stream": False
+        }
+    )
     return response.json()["message"]["content"]
     except requests.exceptions.ConnectionError:
         return None 
@@ -257,3 +258,4 @@ while True:
 
 
     # py ai_test.py 
+    

@@ -3,8 +3,8 @@ class ConversationManager:
     def __init__(self): #conversations, current_conversation, conversations_storage
     # Variables
         self.conversations_storage = "conversation.json" #file path of where convos are stored 
-        if os.path.exists(conversations_storage):
-            with open(conversations_storage, "r") as conversations: 
+        if os.path.exists(self.conversations_storage):
+            with open(self.conversations_storage, "r") as conversations: 
                 self.conversations = to_dict(conversations)
         
 
@@ -16,23 +16,50 @@ class ConversationManager:
         self.current_conversation = new_convo 
 
     def get_current_conversation(self):
-        return current_conversation 
-        #who is calling this function? 
+        return self.current_conversation 
+        #who is calling this function? #probs main
         
     def save_conversation(self):
         #save current_conversation to the conversation.json 
-        current_conversation = to_json(current_conversation)
+        for conversation in self.conversations:
+            if conversation.id == self.current_conversation.id:
+                if os.path.exists(self.conversations_storage):
+                    with open(self.conversations_storage, "w") as conversations: 
+                        self.conversations[conversation] = to_json(self.current_conversations)
+                break
+
         
         
     def load_conversation(self):
+        for conversation in self.conversations:
+            if conversation.id == self.id_selection:
+                self.current_conversation = conversation 
+                break 
         
     def switch_conversation(self):
+        save_conversation(self.current_conversation)
+        load_conversation(self.id_selection)
         
     def delete_conversation(self):
+        for conversation in self.conversations:
+            if conversation.id == self.id_selection:
+                self.conversations.remove(conversation)
+                break 
         
     def list_conversations(self):
+        for conversation in self.conversations:
+            self.conversation_list.append(conversation.summary)
+        return conversation_list 
     
+    def to_dict(self):
 
+        conversation = json.load(self)
+        return conversation
+        
+        
+    def to_json(self):
+        
+        return conversation = json.dumps(self)
 
 
 
