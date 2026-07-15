@@ -4,8 +4,12 @@ class ConversationManager:
     # Variables
         self.conversations_storage = "conversation.json" #file path of where convos are stored 
         if os.path.exists(self.conversations_storage):
-            with open(self.conversations_storage, "r") as conversations: 
-                self.conversations = json.load(to_object(conversations))
+            with open(self.conversations_storage, "r") as conversations: #conversations is a list of dicts
+                #load json into a dict 
+                conversations_loading = json.load(conversations) #load the list of dicts into local conversations list 
+                #loop through the list and turn each dict into an object 
+                for conversation in conversations_loading:
+                    self.conversations.append(to_object(conversation))  #turn the dict into object
         
 
     #Functions 
@@ -21,11 +25,12 @@ class ConversationManager:
         
     def save_conversation(self):
         #save current_conversation to the conversation.json 
-        for conversation in self.conversations:
-            if conversation.id_num == self.current_conversation.id_num:
-                if os.path.exists(self.conversations_storage):
-                    with open(self.conversations_storage, "w") as conversations: 
-                        self.conversations[conversation] = json.dump(to_dict(self.current_conversations))
+        for conversation in self.conversations: #loop through the list of conversations 
+            if conversation.id_num == self.current_conversation.id_num: #to find the current conversation 
+                current_conversation_loading = to_dict(current_conversation) # turn the current conversation into a dict stored locally here
+                if os.path.exists(self.conversations_storage): #if file exists 
+                    with open(self.conversations_storage, "w") as conversations: #and file is open with our list of saved conversations  
+                        self.conversations[conversation] = json.dump(current_conversation_loading) # the list of saved conversations[this conversation] now equals our local conversation dict 
                 break
 
         
