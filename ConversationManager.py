@@ -5,13 +5,13 @@ class ConversationManager:
         self.conversations_storage = "conversation.json" #file path of where convos are stored 
         if os.path.exists(self.conversations_storage):
             with open(self.conversations_storage, "r") as conversations: 
-                self.conversations = to_dict(conversations)
+                self.conversations = json.load(to_object(conversations))
         
 
     #Functions 
     def create_conversation(self):
         new_convo = Conversation() 
-        new_convo.id = #get system date/time 
+        new_convo.id_num = #get system date/time 
         self.conversations.append(new_convo)
         self.current_conversation = new_convo 
 
@@ -22,17 +22,17 @@ class ConversationManager:
     def save_conversation(self):
         #save current_conversation to the conversation.json 
         for conversation in self.conversations:
-            if conversation.id == self.current_conversation.id:
+            if conversation.id_num == self.current_conversation.id_num:
                 if os.path.exists(self.conversations_storage):
                     with open(self.conversations_storage, "w") as conversations: 
-                        self.conversations[conversation] = to_json(self.current_conversations)
+                        self.conversations[conversation] = json.dump(to_dict(self.current_conversations))
                 break
 
         
         
     def load_conversation(self):
         for conversation in self.conversations:
-            if conversation.id == self.id_selection:
+            if conversation.id_num == self.id_selection:
                 self.current_conversation = conversation 
                 break 
         
@@ -42,7 +42,7 @@ class ConversationManager:
         
     def delete_conversation(self):
         for conversation in self.conversations:
-            if conversation.id == self.id_selection:
+            if conversation.id_num == self.id_selection:
                 self.conversations.remove(conversation)
                 break 
         
@@ -51,15 +51,7 @@ class ConversationManager:
             self.conversation_list.append(conversation.summary)
         return conversation_list 
     
-    def to_dict(self):
 
-        conversation = json.load(self)
-        return conversation
-        
-        
-    def to_json(self):
-        
-        return conversation = json.dumps(self)
 
 
 
