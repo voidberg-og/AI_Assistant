@@ -2,20 +2,28 @@ class ConversationManager:
 
     def __init__(self): #conversations, current_conversation, conversations_storage
     # Variables
+        self.current_conversation = None
+        self.conversations = [] 
         self.conversations_storage = "conversation.json" #file path of where convos are stored 
+        
+
+    #Functions 
+    def load_conversations(self):
         if os.path.exists(self.conversations_storage):
             with open(self.conversations_storage, "r") as conversations: #conversations is a list of dicts
                 #load json into a dict 
                 conversations_loading = json.load(conversations) #load the list of dicts into local conversations list 
                 #loop through the list and turn each dict into an object 
-                for conversation in conversations_loading:
-                    self.conversations.append(to_object(conversation))  #turn the dict into object
-        
-
-    #Functions 
+                for conversation_dict in conversations_loading:
+                    conversation = Conversation.from_dict(conversation_dict)
+                    self.conversations.append(conversation)
+                    
     def create_conversation(self):
         new_convo = Conversation() 
-        new_convo.id_num = #get system date/time 
+        next_id = 1
+        if self.conversations:
+            next_id = max(conversation.id_num for conversation in self.conversations) + 1
+        new_convo.id_num = next_id 
         self.conversations.append(new_convo)
         self.current_conversation = new_convo 
 
@@ -23,27 +31,30 @@ class ConversationManager:
         return self.current_conversation 
         #who is calling this function? #probs main
         
-    def save_conversation(self):
-        #save current_conversation to the conversation.json 
-        for conversation in self.conversations: #loop through the list of conversations 
-            if conversation.id_num == self.current_conversation.id_num: #to find the current conversation 
-                current_conversation_loading = to_dict(current_conversation) # turn the current conversation into a dict stored locally here
-                if os.path.exists(self.conversations_storage): #if file exists 
-                    with open(self.conversations_storage, "w") as conversations: #and file is open with our list of saved conversations  
-                        self.conversations[conversation] = json.dump(current_conversation_loading) # the list of saved conversations[this conversation] now equals our local conversation dict 
-                break
+    def save_conversations(self):
+        #empty list 
+        conversations_loading = []
+        #loop through the list of objects and turn each object into a dict
+        for conversation in self.conversations:
+            #and store the dict in a new list
+            conversations_loading.append(conversation.to_dict())
+        
+        #save all conversations to the conversation.json 
+        with open(self.conversations_storage, "w") as conversations: #and file is open with our list of saved conversations  
+            #dump the list into storage 
+            json.dump(conversations_loading, conversations) 
 
         
         
-    def load_conversation(self):
+    def load_conversation(self, id_selection):
         for conversation in self.conversations:
-            if conversation.id_num == self.id_selection:
+            if conversation.id_num == id_selection:
                 self.current_conversation = conversation 
                 break 
         
     def switch_conversation(self):
-        save_conversation(self.current_conversation)
-        load_conversation(self.id_selection)
+        self.save_conversations()
+        self.load_conversation(self.id_selection)
         
     def delete_conversation(self):
         for conversation in self.conversations:
@@ -52,8 +63,9 @@ class ConversationManager:
                 break 
         
     def list_conversations(self):
+        conversation_list = []
         for conversation in self.conversations:
-            self.conversation_list.append(conversation.summary)
+            conversation_list.append(conversation.summary)
         return conversation_list 
     
 

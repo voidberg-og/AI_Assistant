@@ -1,10 +1,11 @@
 import requests
 import json
 import os
+import datetime 
 
 # ---------Globals---------
 
-CONVERSATION_FILE = "conversation.json"
+manager = ConversationManager() 
 MEMORY_FILE = "memory.json"
 
 """----------------------------------------
@@ -12,7 +13,7 @@ MEMORY_FILE = "memory.json"
 -------------------------------------------
 """ 
     
-def ask_ai(conversation, memory):
+def ask_ai(conversation, memory): #this takes two dicts 
     # load all conversation history and memory items into prompt 
     prompt = []
     
@@ -53,7 +54,7 @@ def ask_ai(conversation, memory):
     prompt.extend(conversation)
     
     
-    reply = query_llm(prompt)
+    reply = query_llm(prompt) #send the list of thw two dicts 
     if reply is None:
         return "Something went wrong. Make sure Ollama is running and retry."
     return reply 
@@ -112,11 +113,11 @@ def query_llm(prompt)
     "http://localhost:11434/api/chat",
     json={
         "model": "llama3.1:8b",
-        "messages": prompt,
+        "messages": prompt, 
         "stream": False
         }
     )
-    return response.json()["message"]["content"]
+    return response.json()["message"]["content"] 
     except requests.exceptions.ConnectionError:
         return None 
     except requests.exceptions.JSONDecodeError as json_err:
@@ -128,8 +129,6 @@ def query_llm(prompt)
     
 # save the conversation and memory files 
 def save_memory():
-    with open(CONVERSATION_FILE, "w") as f:
-        json.dump(conversation, f, indent=2)
         
     with open(MEMORY_FILE, "w") as f:
         json.dump(memory, f, indent=2)
@@ -192,20 +191,28 @@ def format_memory(memory):
 """
 
 # create or open (read) the on-going conversation file 
-if os.path.exists(CONVERSATION_FILE):
-    with open(CONVERSATION_FILE, "r") as f:
-        conversation = json.load(f)
-else:
-    conversation = [
-        {
-            "role": "system",
-            "content": (
-        "You are a helpful assistant.\n\n"
-        "Known facts about the user:\n"
-    )
-        }
-    ]
-    
+manager = ConversationManager() #conversation manager intializes: list of conversations[conversation objects] from file
+#now we can select any previous conversation, but we start with current_conversation = None 
+manager.load_conversations() 
+
+while True:
+    #if user chooses new conversation: 
+    print("Available conversations:\n")
+    for conversation in manager.conversations:
+        print(f"{conversation.id_num} - {conversation.name}")
+    user_input = input("Enter new or conversation number:")
+        # user input asks for either a new conversation or an id of stored conversation
+    if user_input.lower() == "new":
+        manager.create_conversation() #this starts the application out with a fresh conversation object. It adds this fresh 
+        #conversation to the conversation[] list and sets the current_conversation to this one. 
+        break
+        
+    manager.load_conversation(int(user_input)) #else load the selected conversation 
+        
+    if manager.get_current_conversation() is not None: #if input was incorrect and nothing loaded, then current_conversation will still be None and we should loop again
+        break
+    print("Conversation not found.")
+
 # create or open (read) the long-term memories 
 if os.path.exists(MEMORY_FILE):
     with open(MEMORY_FILE, "r") as f:
@@ -231,13 +238,11 @@ while True:
 
         
     # add user message
-    conversation.append({
-        "role": "user",
-        "content": user_input
-    })
+    conversation = manager.get_current_conversation()
+    conversation.add_message("user", user_input)
     
     # get AI reply using FULL conversation so far and saved memory 
-    reply = ask_ai(conversation, memory)
+    reply = ask_ai(manager.get_current_conversation().history, memory) 
     
     # AI decides if user_input conversation worth saving to memory
     memory_update = extract_memory_decision(user_input)
@@ -247,10 +252,11 @@ while True:
     print("AI:", reply)
     
     # add ai-assistant message
-    conversation.append({
-        "role": "assistant",
-        "content": reply
-    })
+    conversation().add_message("assistant", reply)
+
+    #this is where we need to summarize the create_conversation, we will get to that here in a bit 
+    manager.save_conversations() #This saves all conversations, including the current_conversation that we just updated
+    print("Saved Conversation ID: " + manager.get_current_conversation().id_num) #this is so we can see the id of the conversation we are on, this will be taken out at a later time 
     save_memory()
     
 
