@@ -9,15 +9,24 @@ class ConversationManager:
 
     #Functions 
     def load_conversations(self):
+        self.conversations = []
         if os.path.exists(self.conversations_storage):
             with open(self.conversations_storage, "r") as conversations: #conversations is a list of dicts
                 #load json into a dict 
-                conversations_loading = json.load(conversations) #load the list of dicts into local conversations list 
-                #loop through the list and turn each dict into an object 
-                for conversation_dict in conversations_loading:
-                    conversation = Conversation.from_dict(conversation_dict)
-                    self.conversations.append(conversation)
-                    
+                try:
+                    conversations_loading = json.load(conversations) #load the list of dicts into local conversations list 
+                    #see if list is empty, nothing was loaded
+                    if not conversations_loading:
+                        print("No conversations were loaded.")
+                    #loop through the list and turn each dict into an object 
+                    for conversation_dict in conversations_loading:
+                        conversation = Conversation.from_dict(conversation_dict)
+                        self.conversations.append(conversation)
+                #print errors 
+                except json.JSONDecodeError as json_err:
+                    print(f"The server returned invalid JSON Formatting: {json_err}")
+                    return None
+
     def create_conversation(self):
         new_convo = Conversation() 
         next_id = 1
@@ -47,6 +56,7 @@ class ConversationManager:
         
         
     def load_conversation(self, id_selection):
+        self.current_conversation = None 
         for conversation in self.conversations:
             if conversation.id_num == id_selection:
                 self.current_conversation = conversation 
