@@ -62,7 +62,7 @@ class ConversationManager:
                 self.current_conversation = conversation 
                 break 
         
-    def switch_conversation(self):
+    def switch_conversation(self, id_selection):
         self.save_conversations()
         self.load_conversation(self.id_selection)
         

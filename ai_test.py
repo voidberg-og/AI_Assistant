@@ -5,7 +5,7 @@ import datetime
 
 # ---------Globals---------
 
-manager = ConversationManager() 
+
 MEMORY_FILE = "memory.json"
 
 """----------------------------------------
@@ -106,18 +106,18 @@ User said: {user_input}
         return {"action": "ignore"}
 
    
-def query_llm(prompt)
-    
+def query_llm(prompt):
+    #TODO add a timeout= as well 
     try:
-    response = requests.post(
-    "http://localhost:11434/api/chat",
-    json={
-        "model": "llama3.1:8b",
-        "messages": prompt, 
-        "stream": False
-        }
-    )
-    return response.json()["message"]["content"] 
+        response = requests.post(
+            "http://localhost:11434/api/chat",
+            json={
+                "model": "llama3.1:8b",
+                "messages": prompt, 
+                "stream": False
+                }
+        )
+        return response.json()["message"]["content"] 
     except requests.exceptions.ConnectionError:
         return None 
     except requests.exceptions.JSONDecodeError as json_err:
@@ -256,7 +256,7 @@ while True:
 
     #this is where we need to summarize the create_conversation, we will get to that here in a bit 
     manager.save_conversations() #This saves all conversations, including the current_conversation that we just updated
-    print("Saved Conversation ID: " + manager.get_current_conversation().id_num) #this is so we can see the id of the conversation we are on, this will be taken out at a later time 
+    print(f"Saved Conversation ID: {manager.get_current_conversation().id_num}") #this is so we can see the id of the conversation we are on, this will be taken out at a later time 
     save_memory()
     
 
