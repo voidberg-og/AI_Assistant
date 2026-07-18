@@ -191,10 +191,11 @@ def format_memory(memory):
 """
 
 # create or open (read) the on-going conversation file 
-manager = ConversationManager() #conversation manager intializes: list of conversations[conversation objects] from file
+manager = ConversationManager() #start a conversation manager. All conversation functions go through the manager 
+manager.load_conversations() #load all conversations into the manager: list of conversations[conversation objects] from file
 #now we can select any previous conversation, but we start with current_conversation = None 
-manager.load_conversations()
 
+#we will put the following into ConversationManager and remove from main: 
 while True:
     #if user chooses new conversation: 
     print("Available conversations:\n")
