@@ -2,15 +2,15 @@ class MemoryManager:
 
 	def __init__(self):
         #Variables 
-		self.memories = []
+		self.memories = [] #list of memory objects 
         self.memory_storage = "memories.json" #file path of where memories are stored 
 
 
     #Functions 
     def load_memories(self):
-        self.memories = []
+        self.memories = [] #list of memory objects 
         if os.path.exists(self.memory_storage):
-            with open(self.memory_storage, "r") as memories: #conversations is a list of dicts
+            with open(self.memory_storage, "r") as memories: #memories is a list of dicts from json storage 
                 #load json into a dict 
                 try:
                     memories_loading = json.load(memories) #load the list of dicts into local memories list 
@@ -26,42 +26,61 @@ class MemoryManager:
                     print(f"The server returned invalid JSON Formatting: {json_err}")
                     return None
                     
-    def save_memory():
+    '''def save_memory():
         
         with open(MEMORY_FILE, "w") as f:
-            json.dump(memory, f, indent=2)
+            json.dump(memory, f, indent=2)'''
+            
+    def save_memories():
+    #empty list 
+    memories_loading = []
+    #loop through the list of objects and turn each object into a dict
+    for memory in self.memories:
+        #and store the dict in a new list
+        memories_loading.append(memory.to_dict())
+    
+    #save all conversations to the conversation.json 
+    with open(self.memory_storage, "w") as memories: #and file is open with our list of saved conversations  
+        #dump the list into storage 
+        json.dump(memories_loading, memories)
 
     """ This function takes the current memories and the current new suggestion update from
      assistant and ensures it is in correct format and checks for duplicates. If no duplicate
      then add it. It returns the updated list of long term memories. """
-    def apply_memory_update(memory, update):
+    def apply_memory_update(update): #this will take one argument - the extract_memory_decision dict/json, and use our self.memories 
         if not update or update["action"] == "ignore":
-            return memory
+            return None 
 
-        key = update["key"]
-        value = update["value"]
-        if not key or value is None:
+        topic = update["topic"] #string 
+        entries = update["entries"] #list of dicts 
+        if not topic or entries is None:
             return memory
 
         # initialize category if needed
-        if key not in memory:
-            memory[key] = []
+        if topic not in self.memories(topic):
+            memory[topic] = [] empty list #this will just be a string , but this logic still does not make sense. If topic is not in topics, then we need to "add" a new topic, and start a lits of entries. 
+            #I think I need to create a new memory object here instead of an empty list 
+            new_memory = Memory()
+            new_memory = new_memory.topic(topic).entries(entries)
+            
 
-        # ensure list format (important for pets, etc.)
-        if not isinstance(memory[key], list):
-            memory[key] = [memory[key]]
+        # ensure list format (important for pets, etc.) #this needs to be a list of entries, not a list of topics. Topic will have only one string ##FIX ME: THIS IS WHERE I AM ON SECOND PASS OF THIS FUNCTION
+        if not isinstance(memory[topic], list):
+            memory[topic] = [memory[topic]]
 
         # check for duplicates (simple match)
         match_index = None
-        for i, item in enumerate(memory[key]):
-            if isinstance(item, dict) and isinstance(value, dict) and item.get("name") == value.get("name"):
+        for i, item in enumerate(memory[topic]):
+            if isinstance(item, dict) and isinstance(entries, dict) and item.get("name") == value.get("name"): #this line needs looked at.
+                #The line above is saying: if item in topic is a dict, and entries is a dict, and "name"=="name", then match index = i 
+                #But topic is not a dict, it is a string. entries are dicts. We are checking for duplicates of topics, I belive, but this is still not making sense. Oh wait, we can redo this whole thing cuz memory is going to be a memory object, not a dict. Where are we calling this function? Right now it is called in main, but this is a function of the memory manager, it manages the memories, like applying updates to its memories. S we will still call this function in main, but it will be through the memory manager. And therefore, we will be passing a memory object to it, I believe. Lts look at that function now, memory extractor. Looks like it returns json format, so it will be in a dict actually. We will need to turn it into an object before we can add it to our list of objects. So we are still workign with dicts at this point in time of this function. 
                 match_index = i
                 break
                 
         if match_index is not None:
-            memory[key][match_index] = value 
+            memory[topic][match_index] = value 
         else: 
-            memory[key].append(value)
+            memory[topic].append(entries)
 
         return memory
             
@@ -82,6 +101,63 @@ class MemoryManager:
             text += "\n"
 
         return text
+        
+    #AI decides what it will save and print. Includes: instructions, user reply, and returns response 
+    def extract_memory_decision(user_input):
+        prompt = [
+            {
+                "role": "system",
+                "content": """
+    You are a memory extraction system within a personal ai assistant system. 
+
+    Your job:
+    Decide if the user message contains a FACT worth storing long-term.
+
+    Rules:
+    - Only store stable facts (pets, name, project, preferences, etc.) 
+    - Some common topics expected to be long-term: pets, career, projects, work, finanicals, family, troubleshooting, health, philosophy. 
+    - Here is the working list of current memory topics: memory_manager.get_topics() 
+    - If the topic is not included in the common or working list of current memory topics, it can still be saved if it is a stable fact worth storing long-term.
+    - If updating a current working topic, use {"action": "update"} and set the "topic": to the same "topic" from the list of current memory topics 
+    - If adding a new memory, use {"action": "add"}
+    - If nothing important, return {"action": "ignore"}
+
+    Return ONLY valid JSON.
+
+    If adding or updating memory, use this format:
+
+    {
+      "action": "add",
+      "topic": "pets",
+      "entries": {
+        "name": "...",
+        "type": "..."
+      }
+    }
+    """
+            },
+            {
+                "role": "user",
+                "content": f"""
+    User said: {user_input}
+    """
+            }
+        ]
+
+        raw = query_llm(prompt)
+        if raw is None:
+            return {"action":"ignore"}
+        try: 
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return {"action": "ignore"}
+            
+    def get_topics():
+        current_topics = []
+        for memory in self.memories:
+            current_topics.append(memory.topic)
+        return current_topics
+
 """
     #Functions 
 

@@ -246,9 +246,9 @@ while True:
     reply = ask_ai(manager.get_current_conversation().history, memory) 
     
     # AI decides if user_input conversation worth saving to memory
-    memory_update = extract_memory_decision(user_input)
-    print("MEMORY DECISION:", memory_update)
-    memory = apply_memory_update(memory, memory_update)
+    memory_update = extract_memory_decision(user_input) #we wont ned this variable, we will just call memory_manager.extract_memory_decision(user_input)
+    print("MEMORY DECISION:", memory_update) #this can also go within the memory extractor function 
+    memory = apply_memory_update(memory, memory_update) #we wont need this anymore, it will probably live in the extractor function. Or we can do memory_manager.apply_memory_update(memory_manager.extract_memory_decision(user-input)) 
     
     print("AI:", reply)
     
