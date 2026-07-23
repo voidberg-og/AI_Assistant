@@ -10,14 +10,14 @@ class Memory:
     def from_dict(cls, memory):
         current_memory_loading = cls()
         current_memory_loading.topic = memory["topic"]
-        current_memory_loading.summary = memory["entries"]
+        current_memory_loading.entries = memory["entries"]
 
         #return current_conversation = json.load(self)
         return current_memory_loading
         
     def to_dict(self):#topic, entries 
         return {"topic" : self.topic, 
-            "entries" : self.summary}
+            "entries" : self.entries}
             
             
             
@@ -48,5 +48,19 @@ class Memory:
 
 
         
+memory.contains_entry(...)
 
+memory.add_entry(...)
+
+memory.update_entry(...)
+
+memory.find_entry(...)
+
+find_entry(...)
+
+contains_entry(...)
+
+add_entry(...)
+
+update_entry(...)
         """

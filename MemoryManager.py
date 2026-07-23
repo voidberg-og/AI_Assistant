@@ -46,11 +46,11 @@ class MemoryManager:
 
     """ This function takes the current memories and the current new suggestion update from
      assistant and ensures it is in correct format and checks for duplicates. If no duplicate
-     then add it. It returns the updated list of long term memories. """
+     then add it. It returns the updated list of long term memories. FIX THIS DESCRIPTION"""
     def apply_memory_update(update): #this will take one argument - the extract_memory_decision dict/json, and use our self.memories 
         if not update or update["action"] == "ignore":
             return None 
-
+    #we should have two more options here, if action = update and if action = add #actually maybe not. I still want to check the list to see if topic or entry is already present for both add and update, so they can essentially be the same thing. But if that is the case, we only need add, not both add and update. Let me think on this. 
         topic = update["topic"] #string 
         entries = update["entries"] #list of dicts 
         if not topic or entries is None:
@@ -58,29 +58,41 @@ class MemoryManager:
 
         # initialize category if needed
         if topic not in self.memories(topic):
-            memory[topic] = [] empty list #this will just be a string , but this logic still does not make sense. If topic is not in topics, then we need to "add" a new topic, and start a lits of entries. 
+            #memory[topic] = [] empty list #this will just be a string , but this logic still does not make sense. If topic is not in topics, then we need to "add" a new topic, and start a lits of entries. 
             #I think I need to create a new memory object here instead of an empty list 
             new_memory = Memory()
             new_memory = new_memory.topic(topic).entries(entries)
             
 
-        # ensure list format (important for pets, etc.) #this needs to be a list of entries, not a list of topics. Topic will have only one string ##FIX ME: THIS IS WHERE I AM ON SECOND PASS OF THIS FUNCTION
-        if not isinstance(memory[topic], list):
-            memory[topic] = [memory[topic]]
+        # ensure list format (important for pets, etc.) #this needs to be a list of entries, which are dicts 
+        if not isinstance(new_memory.entries, list):
+            memory.entries = [memory{entries}]
 
-        # check for duplicates (simple match)
+        # check for duplicates (simple match) #FIX ME this realy needs worked on. This is where I currently am, and cannot connect the logic of what I had previously written to where it should belong now in memory manager. 
+        #what I want to do is go through my new object, check if the topic exists, and if it does we want to see if the entry already exists. If it entry does exist yet, then we add the entry to the memory object in our list of memory objects that matches our topic. 
+        #Ok lets do the pseudocode
+        #for memory in memories, 
+            #if memory.topic == new_memory topic: 
+                #check entries for memory.topic and see if it matches new_memory entries #we need to compare first the key in the dict, and then the value in the dict, then move on to the next dict key. 
+                    #if it does, we do nothing with it, we can break here. 
+                #else, add to the list of entries for memory.topic with new_memory.entries 
+            #else 
+                #add the new_memory to the list of memories 
         match_index = None
-        for i, item in enumerate(memory[topic]):
-            if isinstance(item, dict) and isinstance(entries, dict) and item.get("name") == value.get("name"): #this line needs looked at.
-                #The line above is saying: if item in topic is a dict, and entries is a dict, and "name"=="name", then match index = i 
-                #But topic is not a dict, it is a string. entries are dicts. We are checking for duplicates of topics, I belive, but this is still not making sense. Oh wait, we can redo this whole thing cuz memory is going to be a memory object, not a dict. Where are we calling this function? Right now it is called in main, but this is a function of the memory manager, it manages the memories, like applying updates to its memories. S we will still call this function in main, but it will be through the memory manager. And therefore, we will be passing a memory object to it, I believe. Lts look at that function now, memory extractor. Looks like it returns json format, so it will be in a dict actually. We will need to turn it into an object before we can add it to our list of objects. So we are still workign with dicts at this point in time of this function. 
+        for i, item in enumerate(memory.topic):
+            if isinstance(item, string) and isinstance(entries, dict) and item.get("name") == entries.get("name"): #this line needs looked at.
+                #The line above is saying: if item in topic is a string, and entries is a dict, and "name"=="name", then match index = i and break, meaning we did not find a duplicate. Not sure this is what I want here. 
+                #
                 match_index = i
                 break
+        #we should probably implode this function. It is doing too much. We should have one job per function, and Memory objects can own some of these functions. 
                 
+        #the below does not make sense. if match index is not none, meaning we are adding a memory, then ... i dont think this applies here at all anymore. 
+        #I am not sure if we need the rest of this function down below 
         if match_index is not None:
-            memory[topic][match_index] = value 
+            memory.topic(match_index) = entries  
         else: 
-            memory[topic].append(entries)
+            memory.topic.(entries)
 
         return memory
             
@@ -104,6 +116,10 @@ class MemoryManager:
         
     #AI decides what it will save and print. Includes: instructions, user reply, and returns response 
     def extract_memory_decision(user_input):
+        topic_list = ""
+        for topic in memory_manager.get_topics():
+            topic_list += f"[topic] " #I think this is not syntax correct 
+            
         prompt = [
             {
                 "role": "system",
@@ -116,7 +132,8 @@ class MemoryManager:
     Rules:
     - Only store stable facts (pets, name, project, preferences, etc.) 
     - Some common topics expected to be long-term: pets, career, projects, work, finanicals, family, troubleshooting, health, philosophy. 
-    - Here is the working list of current memory topics: memory_manager.get_topics() 
+    - Here is the working list of current memory topics: 
+        {topic_list} 
     - If the topic is not included in the common or working list of current memory topics, it can still be saved if it is a stable fact worth storing long-term.
     - If updating a current working topic, use {"action": "update"} and set the "topic": to the same "topic" from the list of current memory topics 
     - If adding a new memory, use {"action": "add"}
